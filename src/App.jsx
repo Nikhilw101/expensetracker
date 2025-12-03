@@ -9,6 +9,7 @@ import Limit from './pages/Limit';
 import Analytics from './pages/Analytics';
 import Summary from './pages/Summary';
 import Settings from './pages/Settings';
+import AIInsights from './pages/AIInsights';
 
 const AppContent = () => {
     const [currentPage, setCurrentPage] = useState('home');
@@ -20,6 +21,7 @@ const AppContent = () => {
         income: Income,
         limit: Limit,
         analytics: Analytics,
+        aiinsights: AIInsights,
         summary: Summary,
         settings: Settings
     };

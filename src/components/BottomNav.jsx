@@ -1,14 +1,12 @@
 import React from 'react';
-import { Wallet, TrendingUp, Plus, Target, BarChart3, Settings } from 'lucide-react';
+import { Wallet, TrendingUp, Plus, Target, BarChart3, Settings, Sparkles } from 'lucide-react';
 
 const BottomNav = ({ currentPage, setCurrentPage, darkMode }) => {
     const navItems = [
         { id: 'home', icon: Wallet, label: 'Home' },
         { id: 'expenses', icon: TrendingUp, label: 'Expenses' },
-        { id: 'income', icon: Plus, label: 'Income' },
-        { id: 'limit', icon: Target, label: 'Limit' },
+        { id: 'aiinsights', icon: Sparkles, label: 'AI Insights' },
         { id: 'analytics', icon: BarChart3, label: 'Analytics' },
-        { id: 'summary', icon: BarChart3, label: 'Summary' },
         { id: 'settings', icon: Settings, label: 'Settings' }
     ];
 
@@ -20,8 +18,8 @@ const BottomNav = ({ currentPage, setCurrentPage, darkMode }) => {
                         key={item.id}
                         onClick={() => setCurrentPage(item.id)}
                         className={`flex flex-col items-center justify-center px-3 py-2 rounded-2xl transition-all active:scale-95 ${currentPage === item.id
-                                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
-                                : darkMode ? 'text-gray-400' : 'text-gray-500'
+                            ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white'
+                            : darkMode ? 'text-gray-400' : 'text-gray-500'
                             }`}
                     >
                         <item.icon size={20} />

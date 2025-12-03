@@ -6,10 +6,7 @@ const ExpenseItem = ({ expense, onEdit, onDelete, darkMode }) => {
         <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl p-4 shadow-md flex justify-between items-center`}>
             <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${darkMode ? 'bg-purple-900 text-purple-300' : 'bg-purple-100 text-purple-700'}`}>
-                        {expense.category}
-                    </span>
-                    <span className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         {new Date(expense.date).toLocaleDateString()}
                     </span>
                 </div>

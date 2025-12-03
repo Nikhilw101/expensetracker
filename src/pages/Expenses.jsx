@@ -10,13 +10,9 @@ const Expenses = () => {
     const [editingExpense, setEditingExpense] = useState(null);
     const [formData, setFormData] = useState({
         amount: '',
-        category: 'Food',
         description: '',
         date: new Date().toISOString().split('T')[0]
     });
-    const [filter, setFilter] = useState('all');
-
-    const categories = ['Food', 'Travel', 'Shopping', 'Entertainment', 'Bills', 'Other'];
 
     const handleSubmit = () => {
         let success = false;
@@ -29,7 +25,6 @@ const Expenses = () => {
         if (success) {
             setFormData({
                 amount: '',
-                category: 'Food',
                 description: '',
                 date: new Date().toISOString().split('T')[0]
             });
@@ -42,7 +37,6 @@ const Expenses = () => {
         setEditingExpense(expense);
         setFormData({
             amount: expense.amount.toString(),
-            category: expense.category,
             description: expense.description || '',
             date: new Date(expense.date).toISOString().split('T')[0]
         });
@@ -54,14 +48,12 @@ const Expenses = () => {
         setEditingExpense(null);
         setFormData({
             amount: '',
-            category: 'Food',
             description: '',
             date: new Date().toISOString().split('T')[0]
         });
     };
 
-    const filteredExpenses = expenses
-        .filter(e => filter === 'all' || e.category === filter)
+    const sortedExpenses = expenses
         .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     return (
@@ -89,32 +81,10 @@ const Expenses = () => {
                 />
             )}
 
-            <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-                <button
-                    onClick={() => setFilter('all')}
-                    className={`px-4 py-2 rounded-full whitespace-nowrap active:scale-95 transition-transform ${filter === 'all'
-                            ? 'bg-purple-500 text-white'
-                            : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100'
-                        }`}
-                >
-                    All
-                </button>
-                {categories.map(cat => (
-                    <button
-                        key={cat}
-                        onClick={() => setFilter(cat)}
-                        className={`px-4 py-2 rounded-full whitespace-nowrap active:scale-95 transition-transform ${filter === cat
-                                ? 'bg-purple-500 text-white'
-                                : darkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-100'
-                            }`}
-                    >
-                        {cat}
-                    </button>
-                ))}
-            </div>
+
 
             <div className="space-y-3">
-                {filteredExpenses.map(expense => (
+                {sortedExpenses.map(expense => (
                     <ExpenseItem
                         key={expense.id}
                         expense={expense}
@@ -123,7 +93,7 @@ const Expenses = () => {
                         darkMode={darkMode}
                     />
                 ))}
-                {filteredExpenses.length === 0 && (
+                {sortedExpenses.length === 0 && (
                     <p className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         No expenses yet
                     </p>

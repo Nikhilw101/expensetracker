@@ -1,8 +1,6 @@
 import React from 'react';
 
 const AddExpenseForm = ({ formData, setFormData, onSubmit, onCancel, isEditing, darkMode }) => {
-    const categories = ['Food', 'Travel', 'Shopping', 'Entertainment', 'Bills', 'Other'];
-
     const handleSubmit = (e) => {
         e.preventDefault();
         onSubmit();
@@ -24,15 +22,6 @@ const AddExpenseForm = ({ formData, setFormData, onSubmit, onCancel, isEditing, 
                     min="0.01"
                     required
                 />
-                <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className={`w-full p-4 rounded-2xl mb-3 ${darkMode ? 'bg-gray-700 text-white' : 'bg-gray-100'} outline-none`}
-                >
-                    {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                </select>
                 <input
                     type="text"
                     placeholder="Description (optional)"
