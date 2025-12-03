@@ -1,8 +1,8 @@
 import React from 'react';
-import { Sun, Moon, Download, Upload, RotateCcw } from 'lucide-react';
+import { Sun, Moon, Download, Upload, RotateCcw, Target } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 
-const Settings = () => {
+const Settings = ({ setCurrentPage }) => {
     const { darkMode, setDarkMode, income, expenses, spendingLimit, summaryHistory, showToast } = useApp();
 
     const exportData = () => {
@@ -71,6 +71,18 @@ const Settings = () => {
                     <div className={`w-6 h-6 rounded-full bg-white absolute top-1 transition-transform ${darkMode ? 'translate-x-7' : 'translate-x-1'}`} />
                 </button>
             </div>
+
+            <button
+                onClick={() => setCurrentPage('limit')}
+                className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl p-4 mb-4 shadow-md w-full flex items-center justify-between active:scale-95 transition-transform`}
+            >
+                <div className="flex items-center gap-3">
+                    <Target className={darkMode ? 'text-orange-400' : 'text-orange-600'} />
+                    <span className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                        Spending Limit
+                    </span>
+                </div>
+            </button>
 
             <button
                 onClick={exportData}

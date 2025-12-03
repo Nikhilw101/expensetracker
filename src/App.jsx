@@ -31,7 +31,7 @@ const AppContent = () => {
     return (
         <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
             <Toast show={toastState.show} message={toastState.message} type={toastState.type} />
-            <CurrentPage />
+            <CurrentPage setCurrentPage={setCurrentPage} />
             <BottomNav currentPage={currentPage} setCurrentPage={setCurrentPage} darkMode={darkMode} />
         </div>
     );

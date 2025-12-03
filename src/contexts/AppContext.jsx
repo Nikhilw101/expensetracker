@@ -63,6 +63,35 @@ export const AppProvider = ({ children }) => {
         return true;
     };
 
+    const editIncomeHistoryItem = (index, newAmount) => {
+        const numAmount = parseFloat(newAmount);
+        if (isNaN(numAmount) || numAmount <= 0) {
+            showToast('Invalid amount', 'error');
+            return false;
+        }
+
+        const oldItem = income.history[index];
+        if (!oldItem) {
+            showToast('Income item not found', 'error');
+            return false;
+        }
+
+        const diff = numAmount - oldItem.amount;
+
+        const updatedHistory = [...income.history];
+        updatedHistory[index] = { ...oldItem, amount: numAmount };
+
+        const updatedIncome = {
+            ...income,
+            amount: income.amount + diff,
+            history: updatedHistory
+        };
+
+        setIncome(updatedIncome);
+        showToast('Income updated successfully!');
+        return true;
+    };
+
     // Expense management
     const addExpense = (expenseData) => {
         const numAmount = parseFloat(expenseData.amount);
@@ -163,6 +192,7 @@ export const AppProvider = ({ children }) => {
         // Income functions
         addIncome,
         updateIncome,
+        editIncomeHistoryItem,
 
         // Expense functions
         addExpense,

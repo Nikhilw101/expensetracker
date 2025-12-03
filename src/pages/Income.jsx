@@ -1,20 +1,42 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Pencil } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import IncomeCard from '../components/IncomeCard';
 import AddIncomeForm from '../components/AddIncomeForm';
 
 const Income = () => {
-    const { income, addIncome, darkMode } = useApp();
+    const { income, addIncome, editIncomeHistoryItem, darkMode } = useApp();
     const [showForm, setShowForm] = useState(false);
     const [amount, setAmount] = useState('');
+    const [editingIndex, setEditingIndex] = useState(null);
 
     const handleSubmit = () => {
-        const success = addIncome(amount);
-        if (success) {
-            setAmount('');
-            setShowForm(false);
+        if (editingIndex !== null) {
+            const success = editIncomeHistoryItem(editingIndex, amount);
+            if (success) {
+                setAmount('');
+                setEditingIndex(null);
+                setShowForm(false);
+            }
+        } else {
+            const success = addIncome(amount);
+            if (success) {
+                setAmount('');
+                setShowForm(false);
+            }
         }
+    };
+
+    const handleEditClick = (index, currentAmount) => {
+        setAmount(currentAmount.toString());
+        setEditingIndex(index);
+        setShowForm(true);
+    };
+
+    const handleCancel = () => {
+        setShowForm(false);
+        setEditingIndex(null);
+        setAmount('');
     };
 
     return (
@@ -24,7 +46,11 @@ const Income = () => {
                     Income
                 </h1>
                 <button
-                    onClick={() => setShowForm(!showForm)}
+                    onClick={() => {
+                        setEditingIndex(null);
+                        setAmount('');
+                        setShowForm(!showForm);
+                    }}
                     className="bg-gradient-to-r from-green-500 to-emerald-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
                 >
                     <Plus size={24} />
@@ -34,34 +60,48 @@ const Income = () => {
             <IncomeCard income={income} darkMode={darkMode} />
 
             {showForm && (
-                <AddIncomeForm
-                    amount={amount}
-                    setAmount={setAmount}
-                    onSubmit={handleSubmit}
-                    onCancel={() => setShowForm(false)}
-                    darkMode={darkMode}
-                />
+                <div className="mb-6">
+                    <h3 className={`text-lg font-semibold mb-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                        {editingIndex !== null ? 'Edit Income' : 'Add Income'}
+                    </h3>
+                    <AddIncomeForm
+                        amount={amount}
+                        setAmount={setAmount}
+                        onSubmit={handleSubmit}
+                        onCancel={handleCancel}
+                        darkMode={darkMode}
+                    />
+                </div>
             )}
 
             <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                 History
             </h3>
             <div className="space-y-3">
-                {income.history.slice().reverse().map((item, idx) => (
-                    <div
-                        key={idx}
-                        className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl p-4 shadow-md flex justify-between items-center`}
-                    >
-                        <div>
-                            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                                {new Date(item.date).toLocaleDateString()}
-                            </p>
-                            <p className={`text-2xl font-bold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
-                                +₹{item.amount.toFixed(2)}
-                            </p>
+                {income.history.slice().reverse().map((item, idx) => {
+                    const realIndex = income.history.length - 1 - idx;
+                    return (
+                        <div
+                            key={idx}
+                            className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-2xl p-4 shadow-md flex justify-between items-center`}
+                        >
+                            <div>
+                                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    {new Date(item.date).toLocaleDateString()}
+                                </p>
+                                <p className={`text-2xl font-bold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+                                    +₹{item.amount.toFixed(2)}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => handleEditClick(realIndex, item.amount)}
+                                className={`p-2 rounded-full ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'} active:scale-95 transition-transform`}
+                            >
+                                <Pencil size={18} />
+                            </button>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
                 {income.history.length === 0 && (
                     <p className={`text-center py-8 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         No income history yet
