@@ -170,9 +170,19 @@ const AIInsights = () => {
             const remaining = monthlyBudget - spentThisMonth;
             const safeDaily = Math.max(0, remaining / daysRemaining);
 
+            // Calculate expected spending rate
+            const daysPassed = dayOfMonth;
+            const expectedSpent = (monthlyBudget / daysInMonth) * daysPassed;
+            const difference = spentThisMonth - expectedSpent;
+
             let status = 'good';
-            if (safeDaily < spendingLimit * 0.5) status = 'danger';
-            else if (safeDaily < spendingLimit) status = 'warning';
+            if (remaining < 0) {
+                status = 'danger'; // Over budget
+            } else if (difference > monthlyBudget * 0.1) {
+                status = 'warning'; // Spending more than 10% over expected rate
+            } else if (safeDaily < spendingLimit * 0.5) {
+                status = 'warning'; // Daily budget getting tight
+            }
 
             setInsights(prev => {
                 const updated = { ...prev, safeToSpend: { loading: false, amount: safeDaily, status, error: null } };

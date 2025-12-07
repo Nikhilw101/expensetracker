@@ -111,16 +111,32 @@ export async function generateFinancialSummary(expenses, income, period = 'month
     const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
     const balance = income.amount - totalExpenses;
     const avgDaily = totalExpenses / (expenses.length > 0 ? Math.max(1, getDaysBetween(expenses)) : 1);
+    const savingsRate = income.amount > 0 ? ((balance / income.amount) * 100).toFixed(1) : 0;
 
-    const prompt = `Analyze this financial situation and provide helpful insights:
+    // Category breakdown
+    const categoryTotals = {};
+    expenses.forEach(e => {
+        const cat = e.category || 'Other';
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(e.amount);
+    });
+    const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
 
-Income: ₹${income.amount.toFixed(2)}
-Total Expenses: ₹${totalExpenses.toFixed(2)}
-Current Balance: ₹${balance.toFixed(2)}
-Number of Transactions: ${expenses.length}
-Average Daily Spend: ₹${avgDaily.toFixed(2)}
+    const prompt = `You are a professional financial advisor. Analyze this financial situation and provide specific, actionable advice:
 
-Provide a clear 3-4 sentence summary of their financial health with actionable advice.`;
+Financial Data:
+- Monthly Income: ₹${income.amount.toFixed(2)}
+- Total Expenses: ₹${totalExpenses.toFixed(2)}
+- Current Balance: ₹${balance.toFixed(2)}
+- Savings Rate: ${savingsRate}%
+- Transactions: ${expenses.length}
+- Average Daily Spend: ₹${avgDaily.toFixed(2)}
+- Highest Spending Category: ${topCategory ? `${topCategory[0]} (₹${topCategory[1].toFixed(2)})` : 'N/A'}
+
+Provide a 3-4 sentence analysis that includes:
+1. Assessment of financial health (excellent/good/needs improvement)
+2. One specific strength
+3. One actionable recommendation to improve savings
+Keep it encouraging but practical. Use Indian Rupee context.`;
 
     return await callGeminiAPI(prompt);
 }
@@ -137,21 +153,24 @@ export async function detectOverspendingPatterns(expenses) {
     const byTimeOfDay = groupByTimeOfDay(expenses);
     const avgAmount = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0) / expenses.length;
 
-    const prompt = `Analyze these spending patterns and identify areas for improvement:
+    // Find highest spending patterns
+    const highestDay = Object.entries(byDayOfWeek)
+        .filter(([_, data]) => data.count > 0)
+        .sort((a, b) => b[1].total - a[1].total)[0];
 
-Average Transaction: ₹${avgAmount.toFixed(2)}
+    const prompt = `As a financial advisor, analyze these spending behaviors and give 3 specific action items:
 
-Spending by Day of Week:
-${Object.entries(byDayOfWeek).map(([day, data]) =>
-        `${day}: ${data.count} transactions, ₹${data.total.toFixed(2)} total, ₹${data.avg.toFixed(2)} avg`
-    ).join('\n')}
+Key Metrics:
+- Average per transaction: ₹${avgAmount.toFixed(2)}
+- Peak spending day: ${highestDay ? `${highestDay[0]} (₹${highestDay[1].total.toFixed(2)})` : 'Varied'}
+- Total transactions: ${expenses.length}
 
-Spending by Time of Day:
-${Object.entries(byTimeOfDay).map(([time, data]) =>
-        `${time}: ${data.count} transactions, ₹${data.total.toFixed(2)} total`
-    ).join('\n')}
+Provide:
+1. Main pattern observed (be specific with days/times)
+2. One concrete habit to change (with potential monthly savings)
+3. One positive behavior to maintain
 
-Identify key spending patterns and provide 3-4 actionable recommendations.`;
+Keep response under 100 words. Be direct and actionable.`;
 
     return await callGeminiAPI(prompt);
 }
@@ -171,13 +190,19 @@ export async function predictFutureExpenses(expenses, days = 7) {
 
     const trend = calculateTrend(expenses);
 
-    const prompt = `Based on this spending pattern, provide a forecast:
+    const prompt = `As a financial forecaster, predict next ${days} days spending:
 
-Last 14 days total: ₹${totalRecent.toFixed(2)}
-Average daily spend: ₹${avgDaily.toFixed(2)}
-Spending trend: ${trend > 0 ? 'increasing' : 'decreasing'} by ${Math.abs(trend).toFixed(1)}% per week
+Recent Data:
+- Last 14 days: ₹${totalRecent.toFixed(2)}
+- Daily average: ₹${avgDaily.toFixed(2)}
+- Trend: ${trend > 0 ? `↑${Math.abs(trend).toFixed(1)}%` : `↓${Math.abs(trend).toFixed(1)}%`} per week
 
-Predict spending for the next ${days} days with practical insights. 2-3 sentences.`;
+Provide:
+1. Expected ${days}-day total (specific amount)
+2. One factor that might increase spending
+3. One tip to stay on track
+
+Be concise (60 words max). Give specific rupee amounts.`;
 
     return await callGeminiAPI(prompt);
 }
@@ -266,13 +291,18 @@ export async function generateStabilityScore(expenses) {
     const rawScore = Math.max(0, 100 - (coefficientOfVariation * 100));
     const score = Math.round(Math.min(100, rawScore));
 
-    const prompt = `Analyze financial stability:
+    const prompt = `Interpret this financial stability score:
 
-Stability Score: ${score}/100
+Score: ${score}/100 ${score >= 70 ? '(Good)' : score >= 40 ? '(Fair)' : '(Needs Work)'}
+Spending Variation: ${(coefficientOfVariation * 100).toFixed(1)}%
 Average Transaction: ₹${avg.toFixed(2)}
-Variation: ${(coefficientOfVariation * 100).toFixed(1)}%
 
-Explain what this score means and provide 2-3 actionable tips to improve financial stability.`;
+Provide:
+1. What this score means in simple terms
+2. Why the variation matters
+3. Two specific actions to improve stability
+
+Keep under 80 words. Be encouraging but honest.`;
 
     const explanation = await callGeminiAPI(prompt);
 
