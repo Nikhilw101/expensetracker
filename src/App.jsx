@@ -10,6 +10,9 @@ import Analytics from './pages/Analytics';
 import Summary from './pages/Summary';
 import Settings from './pages/Settings';
 import AIInsights from './pages/AIInsights';
+import SavingsGoals from './pages/SavingsGoals';
+import RecurringExpenses from './pages/RecurringExpenses';
+import MonthlyReport from './pages/MonthlyReport';
 
 const AppContent = () => {
     const [currentPage, setCurrentPage] = useState('home');
@@ -23,7 +26,10 @@ const AppContent = () => {
         analytics: Analytics,
         aiinsights: AIInsights,
         summary: Summary,
-        settings: Settings
+        settings: Settings,
+        savingsgoals: SavingsGoals,
+        recurring: RecurringExpenses,
+        monthlyreport: MonthlyReport
     };
 
     const CurrentPage = pages[currentPage];

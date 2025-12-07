@@ -1,8 +1,9 @@
 import React from 'react';
 import { useApp } from '../contexts/AppContext';
 import LimitProgressCircle from '../components/LimitProgressCircle';
+import { Target, Repeat, Sparkles, ArrowRight } from 'lucide-react';
 
-const Home = () => {
+const Home = ({ setCurrentPage }) => {
     const { income, expenses, spendingLimit, getCurrentBalance, darkMode } = useApp();
 
     const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
@@ -20,6 +21,40 @@ const Home = () => {
             return expenseDate >= weekAgo;
         })
         .reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+
+    // Load savings goals and recurring expenses
+    const savingsGoals = JSON.parse(localStorage.getItem('savingsGoals') || '[]');
+    const recurringExpenses = JSON.parse(localStorage.getItem('recurringExpenses') || '[]');
+
+    const activeGoals = savingsGoals.filter(g => (g.currentAmount / g.targetAmount) < 1).length;
+    const activeRecurring = recurringExpenses.filter(r => r.isActive).length;
+
+    const quickAccessCards = [
+        {
+            id: 'savingsgoals',
+            title: 'Savings Goals',
+            icon: Target,
+            gradient: 'from-green-500 to-emerald-500',
+            stat: activeGoals > 0 ? `${activeGoals} Active` : 'Get Started',
+            description: 'Track your financial goals'
+        },
+        {
+            id: 'recurring',
+            title: 'Recurring Bills',
+            icon: Repeat,
+            gradient: 'from-purple-500 to-pink-500',
+            stat: activeRecurring > 0 ? `${activeRecurring} Active` : 'Add Bills',
+            description: 'Manage subscriptions & bills'
+        },
+        {
+            id: 'aiinsights',
+            title: 'AI Insights',
+            icon: Sparkles,
+            gradient: 'from-blue-500 to-cyan-500',
+            stat: 'Powered by AI',
+            description: 'Smart financial analysis'
+        }
+    ];
 
     return (
         <div className="pb-20 px-4 pt-6">
@@ -53,7 +88,7 @@ const Home = () => {
                 />
             </div>
 
-            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-6 shadow-lg`}>
+            <div className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-6 mb-6 shadow-lg`}>
                 <h3 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
                     Last 7 Days
                 </h3>
@@ -63,6 +98,40 @@ const Home = () => {
                 <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     Total spent this week
                 </p>
+            </div>
+
+            {/* Quick Access Cards */}
+            <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                Quick Access
+            </h3>
+            <div className="grid grid-cols-1 gap-4">
+                {quickAccessCards.map(card => (
+                    <button
+                        key={card.id}
+                        onClick={() => setCurrentPage(card.id)}
+                        className={`${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-3xl p-5 shadow-lg active:scale-95 transition-transform`}
+                    >
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className={`bg-gradient-to-r ${card.gradient} p-4 rounded-2xl`}>
+                                    <card.icon size={28} className="text-white" />
+                                </div>
+                                <div className="text-left">
+                                    <h4 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+                                        {card.title}
+                                    </h4>
+                                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        {card.description}
+                                    </p>
+                                    <p className={`text-sm font-semibold mt-1 bg-gradient-to-r ${card.gradient} bg-clip-text text-transparent`}>
+                                        {card.stat}
+                                    </p>
+                                </div>
+                            </div>
+                            <ArrowRight size={24} className={darkMode ? 'text-gray-600' : 'text-gray-400'} />
+                        </div>
+                    </button>
+                ))}
             </div>
         </div>
     );

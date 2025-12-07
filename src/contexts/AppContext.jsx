@@ -92,6 +92,33 @@ export const AppProvider = ({ children }) => {
         return true;
     };
 
+    const deleteIncome = (index) => {
+        const itemToDelete = income.history[index];
+        if (!itemToDelete) {
+            showToast('Income item not found', 'error');
+            return false;
+        }
+
+        const updatedHistory = income.history.filter((_, idx) => idx !== index);
+        const newTotalAmount = income.amount - itemToDelete.amount;
+
+        // Prevent negative income
+        if (newTotalAmount < 0) {
+            showToast('Cannot delete: would result in negative income', 'error');
+            return false;
+        }
+
+        const updatedIncome = {
+            ...income,
+            amount: newTotalAmount,
+            history: updatedHistory
+        };
+
+        setIncome(updatedIncome);
+        showToast('Income deleted successfully!', 'success');
+        return true;
+    };
+
     // Expense management
     const addExpense = (expenseData) => {
         const numAmount = parseFloat(expenseData.amount);
@@ -193,6 +220,7 @@ export const AppProvider = ({ children }) => {
         addIncome,
         updateIncome,
         editIncomeHistoryItem,
+        deleteIncome,
 
         // Expense functions
         addExpense,

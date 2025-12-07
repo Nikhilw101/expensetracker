@@ -5,12 +5,28 @@ A modern, mobile-first Money Management App specifically designed for hostel stu
 ## ✨ Features
 
 ### 📊 Core Functionality
-- **Income Management**: Track all your income sources with history
-- **Expense Tracking**: Add, edit, and delete expenses with categories
+- **Income Management**: Add, edit, and delete income entries with history tracking
+- **Expense Tracking**: Full CRUD operations for expenses with categories
+- **Recurring Expenses**: Track subscriptions, bills, and recurring payments with auto-reminders
+- **Savings Goals**: Set and track multiple financial goals with progress visualization
 - **Spending Limits**: Set daily spending limits with visual alerts
 - **Auto Summaries**: Automatic 30-day financial summaries
-- **Analytics**: Beautiful charts showing spending patterns
+- **Analytics**: Beautiful charts showing spending patterns and trends
+- **Monthly Reports**: AI-generated comprehensive monthly financial reports
 - **Data Persistence**: All data stored in localStorage (no backend needed)
+
+### 🤖 AI-Powered Features
+- **AI Financial Summary**: Intelligent overview of your financial health
+- **Spending Pattern Analysis**: AI detects overspending patterns and trends
+- **Future Expense Predictions**: 7-day spending forecast
+- **Budget Recommendations**: Personalized budget suggestions per category
+- **Savings Goal Analysis**: AI-powered advice to reach your goals faster
+- **Bill Payment Predictions**: Identifies recurring bills and predicts due dates
+- **Anomaly Detection**: Flags unusual transactions
+- **Stability Score**: Financial stability assessment
+- **Spending Personality**: Behavioral spending profile analysis
+- **AI Chat Assistant**: Ask questions about your finances
+- **Expense Categorization**: Smart category suggestions for new expenses
 
 ### 🎨 UI/UX Features
 - **Mobile-First Design**: Optimized for thumb-friendly navigation
@@ -29,20 +45,44 @@ A modern, mobile-first Money Management App specifically designed for hostel stu
 ### Prerequisites
 - Node.js (v18 or higher)
 - npm or yarn
+- **AI API Keys** (Optional but recommended for AI features):
+  - Gemini API Key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+  - Groq API Key from [Groq Console](https://console.groq.com) (fallback)
 
 ### Installation
 
-1. **Install Dependencies**
+1. **Clone or Download the Repository**
+```bash
+git clone <repository-url>
+cd expense-management
+```
+
+2. **Install Dependencies**
 ```bash
 npm install
 ```
 
-2. **Run Development Server**
+3. **Configure AI API Keys** (Optional)
+
+   Create a `.env` file in the root directory:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` and add your API keys:
+   ```
+   VITE_GEMINI_API_KEY=your_gemini_api_key_here
+   VITE_GROQ_API_KEY=your_groq_api_key_here
+   ```
+   
+   > **Note**: The app works without API keys, but AI features will be limited. Gemini is the primary AI provider, with Groq as a fallback.
+
+4. **Run Development Server**
 ```bash
 npm run dev
 ```
 
-3. **Build for Production**
+5. **Build for Production**
 ```bash
 npm run build
 ```

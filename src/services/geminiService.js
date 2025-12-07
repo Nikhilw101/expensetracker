@@ -400,3 +400,217 @@ function calculateTrend(expenses) {
 
     return ((secondAvg - firstAvg) / firstAvg) * 100;
 }
+
+/**
+ * Generate Budget Recommendations
+ */
+export async function generateBudgetRecommendations(expenses, income, savingsGoal = 0) {
+    if (expenses.length < 5) {
+        return "Need at least 5 transactions to generate budget recommendations. Keep tracking your expenses.";
+    }
+
+    const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    const monthlyIncome = income.amount;
+    const savingsRate = ((monthlyIncome - totalExpenses) / monthlyIncome) * 100;
+
+    // Group by category
+    const categoryTotals = {};
+    expenses.forEach(e => {
+        const cat = e.category || 'Other';
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(e.amount);
+    });
+
+    const categoryBreakdown = Object.entries(categoryTotals)
+        .map(([cat, total]) => `${cat}: ₹${total.toFixed(2)} (${((total / totalExpenses) * 100).toFixed(1)}%)`)
+        .join('\n');
+
+    const prompt = `Create personalized budget recommendations:
+
+Monthly Income: ₹${monthlyIncome.toFixed(2)}
+Total Spending: ₹${totalExpenses.toFixed(2)}
+Current Savings Rate: ${savingsRate.toFixed(1)}%
+Savings Goal: ₹${savingsGoal.toFixed(2)}
+
+Category Breakdown:
+${categoryBreakdown}
+
+Provide 4-5 specific budget recommendations with suggested amounts for each category to optimize savings and meet financial goals.`;
+
+    return await callGeminiAPI(prompt);
+}
+
+/**
+ * Analyze Savings Progress
+ */
+export async function analyzeSavingsProgress(expenses, income, savingsGoals = []) {
+    if (savingsGoals.length === 0) {
+        return "No savings goals set. Create savings goals to track your progress and get personalized recommendations!";
+    }
+
+    const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+    const monthlyIncome = income.amount;
+    const currentSavings = monthlyIncome - totalExpenses;
+
+    const goalsInfo = savingsGoals.map(goal => {
+        const progress = ((goal.currentAmount / goal.targetAmount) * 100).toFixed(1);
+        const remaining = goal.targetAmount - goal.currentAmount;
+        const monthsRemaining = goal.deadline ?
+            Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24 * 30)) : 'not set';
+        const monthlyRequired = monthsRemaining > 0 ? (remaining / monthsRemaining).toFixed(2) : 0;
+
+        return `Goal: "${goal.name}"
+Target: ₹${goal.targetAmount.toFixed(2)}
+Current: ₹${goal.currentAmount.toFixed(2)} (${progress}%)
+Remaining: ₹${remaining.toFixed(2)}
+Months Left: ${monthsRemaining}
+Monthly Required: ₹${monthlyRequired}`;
+    }).join('\n\n');
+
+    const prompt = `Analyze savings goals progress and provide actionable advice:
+
+Monthly Income: ₹${monthlyIncome.toFixed(2)}
+Monthly Expenses: ₹${totalExpenses.toFixed(2)}
+Current Monthly Savings: ₹${currentSavings.toFixed(2)}
+
+${goalsInfo}
+
+Provide realistic recommendations on how to adjust spending to meet these goals. Be encouraging but honest.`;
+
+    return await callGeminiAPI(prompt);
+}
+
+/**
+ * Suggest Expense Category
+ */
+export async function suggestCategory(description, amount) {
+    if (!description || description.trim() === '') {
+        return 'Other';
+    }
+
+    const prompt = `Based on this expense description and amount, suggest the most appropriate category from: Food, Travel, Shopping, Entertainment, Bills, Other.
+
+Description: "${description}"
+Amount: ₹${amount}
+
+Respond with ONLY the category name, nothing else.`;
+
+    try {
+        const response = await callGeminiAPI(prompt);
+        const category = response.trim();
+        const validCategories = ['Food', 'Travel', 'Shopping', 'Entertainment', 'Bills', 'Other'];
+        return validCategories.includes(category) ? category : 'Other';
+    } catch (error) {
+        console.error('Category suggestion error:', error);
+        return 'Other';
+    }
+}
+
+/**
+ * Predict Upcoming Bills
+ */
+export async function predictUpcomingBills(expenses) {
+    if (expenses.length < 10) {
+        return "Need more transaction history to predict recurring bills accurately. Keep tracking your expenses!";
+    }
+
+    // Group expenses by description to find recurring patterns
+    const expensesByDesc = {};
+    expenses.forEach(e => {
+        const desc = e.description?.toLowerCase() || 'unknown';
+        if (!expensesByDesc[desc]) {
+            expensesByDesc[desc] = [];
+        }
+        expensesByDesc[desc].push({
+            amount: parseFloat(e.amount),
+            date: new Date(e.date)
+        });
+    });
+
+    // Find potentially recurring expenses (same description, appeared 2+ times)
+    const recurringItems = [];
+    Object.entries(expensesByDesc).forEach(([desc, items]) => {
+        if (items.length >= 2) {
+            const amounts = items.map(i => i.amount);
+            const avgAmount = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+            const dates = items.map(i => i.date);
+            recurringItems.push({
+                description: desc,
+                count: items.length,
+                avgAmount: avgAmount,
+                lastDate: new Date(Math.max(...dates))
+            });
+        }
+    });
+
+    if (recurringItems.length === 0) {
+        return "No recurring payment patterns detected yet. Continue tracking to identify recurring bills.";
+    }
+
+    const recurringInfo = recurringItems
+        .slice(0, 5) // Top 5
+        .map(item => `"${item.description}" - ₹${item.avgAmount.toFixed(2)} avg, occurred ${item.count} times, last: ${item.lastDate.toLocaleDateString()}`)
+        .join('\n');
+
+    const prompt = `Analyze these recurring expense patterns and predict upcoming bills:
+
+Recurring Transactions:
+${recurringInfo}
+
+Identify likely recurring bills (subscriptions, rent, utilities) and predict next payment dates with amounts.`;
+
+    return await callGeminiAPI(prompt);
+}
+
+/**
+ * Generate Monthly Report
+ */
+export async function generateMonthlyReport(expenses, income, month, year) {
+    const monthExpenses = expenses.filter(e => {
+        const expDate = new Date(e.date);
+        return expDate.getMonth() === month && expDate.getFullYear() === year;
+    });
+
+    if (monthExpenses.length === 0) {
+        return `No expenses recorded for ${new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' })}.`;
+    }
+
+    const totalExpenses = monthExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+    const avgDaily = totalExpenses / new Date(year, month + 1, 0).getDate();
+
+    // Category breakdown
+    const categoryTotals = {};
+    monthExpenses.forEach(e => {
+        const cat = e.category || 'Other';
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(e.amount);
+    });
+
+    const categoryBreakdown = Object.entries(categoryTotals)
+        .sort((a, b) => b[1] - a[1])
+        .map(([cat, total]) => `${cat}: ₹${total.toFixed(2)} (${((total / totalExpenses) * 100).toFixed(1)}%)`)
+        .join('\n');
+
+    const monthName = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' });
+    const savingsAmount = income.amount - totalExpenses;
+    const savingsRate = ((savingsAmount / income.amount) * 100).toFixed(1);
+
+    const prompt = `Generate a comprehensive monthly financial report for ${monthName}:
+
+Income: ₹${income.amount.toFixed(2)}
+Total Expenses: ₹${totalExpenses.toFixed(2)}
+Net Savings: ₹${savingsAmount.toFixed(2)}
+Savings Rate: ${savingsRate}%
+Transaction Count: ${monthExpenses.length}
+Average Daily Spend: ₹${avgDaily.toFixed(2)}
+
+Spending by Category:
+${categoryBreakdown}
+
+Provide a detailed analysis with:
+1. Overall financial health assessment
+2. Key spending patterns and insights
+3. Comparison with recommended budgets
+4. Actionable recommendations for next month
+5. Highlighting achievements or concerns`;
+
+    return await callGeminiAPI(prompt);
+}

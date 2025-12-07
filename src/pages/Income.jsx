@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import IncomeCard from '../components/IncomeCard';
 import AddIncomeForm from '../components/AddIncomeForm';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const Income = () => {
-    const { income, addIncome, editIncomeHistoryItem, darkMode } = useApp();
+    const { income, addIncome, editIncomeHistoryItem, deleteIncome, darkMode } = useApp();
     const [showForm, setShowForm] = useState(false);
     const [amount, setAmount] = useState('');
     const [editingIndex, setEditingIndex] = useState(null);
+    const [deleteConfirm, setDeleteConfirm] = useState({ show: false, index: null, amount: 0 });
 
     const handleSubmit = () => {
         if (editingIndex !== null) {
@@ -37,6 +39,21 @@ const Income = () => {
         setShowForm(false);
         setEditingIndex(null);
         setAmount('');
+    };
+
+    const handleDeleteClick = (index, amount) => {
+        setDeleteConfirm({ show: true, index, amount });
+    };
+
+    const handleDeleteConfirm = () => {
+        const success = deleteIncome(deleteConfirm.index);
+        if (success) {
+            setDeleteConfirm({ show: false, index: null, amount: 0 });
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteConfirm({ show: false, index: null, amount: 0 });
     };
 
     return (
@@ -93,12 +110,20 @@ const Income = () => {
                                     +₹{item.amount.toFixed(2)}
                                 </p>
                             </div>
-                            <button
-                                onClick={() => handleEditClick(realIndex, item.amount)}
-                                className={`p-2 rounded-full ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'} active:scale-95 transition-transform`}
-                            >
-                                <Pencil size={18} />
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handleEditClick(realIndex, item.amount)}
+                                    className={`p-2 rounded-full ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-600'} active:scale-95 transition-transform`}
+                                >
+                                    <Pencil size={18} />
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteClick(realIndex, item.amount)}
+                                    className={`p-2 rounded-full ${darkMode ? 'bg-red-900 bg-opacity-30 text-red-400' : 'bg-red-100 text-red-600'} active:scale-95 transition-transform`}
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                            </div>
                         </div>
                     );
                 })}
@@ -108,6 +133,17 @@ const Income = () => {
                     </p>
                 )}
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <ConfirmDialog
+                show={deleteConfirm.show}
+                title="Delete Income"
+                message={`Are you sure you want to delete this income entry of ₹${deleteConfirm.amount.toFixed(2)}? This will update your total income amount.`}
+                onConfirm={handleDeleteConfirm}
+                onCancel={handleDeleteCancel}
+                darkMode={darkMode}
+                type="danger"
+            />
         </div>
     );
 };
