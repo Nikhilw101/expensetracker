@@ -66,7 +66,16 @@ async function callGroqAPI(prompt) {
  * Make a request to Gemini API with Groq fallback
  */
 async function callGeminiAPI(prompt) {
+    // Check if API keys are available
+    if (!GEMINI_API_KEY && !GROQ_API_KEY) {
+        return "⚠️ AI features require API keys. Add VITE_GEMINI_API_KEY or VITE_GROQ_API_KEY to .env file. See README.md for setup.";
+    }
+
     try {
+        if (!GEMINI_API_KEY && GROQ_API_KEY) {
+            return await callGroqAPI(prompt);
+        }
+
         const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
             method: 'POST',
             headers: {
@@ -80,7 +89,7 @@ async function callGeminiAPI(prompt) {
                 }],
                 generationConfig: {
                     temperature: 0.7,
-                    maxOutputTokens: 1024,
+                    maxOutputTokens: 2048,
                 }
             })
         });
@@ -91,16 +100,19 @@ async function callGeminiAPI(prompt) {
         }
 
         const data = await response.json();
-        return data.candidates[0].content.parts[0].text;
+        const text = data.candidates[0].content.parts[0].text;
+        return text.trim();
     } catch (error) {
         console.error('Gemini API Error:', error);
-        console.log('Attempting Groq fallback...');
-        try {
-            return await callGroqAPI(prompt);
-        } catch (groqError) {
-            console.error('Both Gemini and Groq failed:', groqError);
-            throw new Error('AI service temporarily unavailable. Please try again later.');
+        if (GROQ_API_KEY) {
+            console.log('Attempting Groq fallback...');
+            try {
+                return await callGroqAPI(prompt);
+            } catch (groqError) {
+                console.error('Both APIs failed:', groqError);
+            }
         }
+        return 'AI insights temporarily unavailable. Check your internet connection and API configuration.';
     }
 }
 
@@ -279,30 +291,45 @@ Explain why these transactions are unusual and provide recommendations. 2-3 sent
  */
 export async function generateStabilityScore(expenses) {
     if (expenses.length < 7) {
-        return { score: 50, explanation: "Insufficient data for stability analysis. Please track expenses for at least one week to get an accurate stability score." };
+        return { score: 50, explanation: "Track expenses for at least 7 days to get a stability score. More data = more accurate insights." };
     }
 
     const amounts = expenses.map(e => parseFloat(e.amount));
     const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
     const variance = amounts.reduce((sq, n) => sq + Math.pow(n - avg, 2), 0) / amounts.length;
-    const coefficientOfVariation = Math.sqrt(variance) / avg;
+    const stdDev = Math.sqrt(variance);
+    const coefficientOfVariation = avg > 0 ? (stdDev / avg) : 0;
 
-    // Score: lower variation = higher score
-    const rawScore = Math.max(0, 100 - (coefficientOfVariation * 100));
-    const score = Math.round(Math.min(100, rawScore));
+    // Improved scoring: lower CV = higher score
+    // CV < 0.3 = Excellent (80-100)
+    // CV 0.3-0.6 = Good (60-79)
+    // CV 0.6-1.0 = Fair (40-59)
+    // CV > 1.0 = Needs Work (0-39)
 
-    const prompt = `Interpret this financial stability score:
+    let score;
+    if (coefficientOfVariation < 0.3) {
+        score = Math.round(80 + (0.3 - coefficientOfVariation) * 66.67);
+    } else if (coefficientOfVariation < 0.6) {
+        score = Math.round(60 + (0.6 - coefficientOfVariation) * 66.67);
+    } else if (coefficientOfVariation < 1.0) {
+        score = Math.round(40 + (1.0 - coefficientOfVariation) * 50);
+    } else {
+        score = Math.round(Math.max(0, 40 - (coefficientOfVariation - 1.0) * 20));
+    }
 
-Score: ${score}/100 ${score >= 70 ? '(Good)' : score >= 40 ? '(Fair)' : '(Needs Work)'}
-Spending Variation: ${(coefficientOfVariation * 100).toFixed(1)}%
-Average Transaction: ₹${avg.toFixed(2)}
+    score = Math.max(0, Math.min(100, score));
 
-Provide:
-1. What this score means in simple terms
-2. Why the variation matters
-3. Two specific actions to improve stability
+    const prompt = `Analyze this financial stability score:
 
-Keep under 80 words. Be encouraging but honest.`;
+Score: ${score}/100
+Spending Consistency: ${coefficientOfVariation < 0.5 ? 'High (Good)' : coefficientOfVariation < 1.0 ? 'Moderate' : 'Low (Variable)'}
+Average Transaction: ₹${avg.toFixed(0)}
+Variation: ${(coefficientOfVariation * 100).toFixed(0)}% of average
+
+In 2-3 sentences, explain:
+1. What ${score}/100 means for their financial habits
+2. One specific tip to improve consistency
+Be concise and actionable.`;
 
     const explanation = await callGeminiAPI(prompt);
 
